@@ -1,0 +1,11 @@
+{
+  "name": "gccc-gamestore",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GCCC - store for game top-ups, static site on Firebase Hosting",
+  "type": "module",
+  "scripts": {
+    "start": "node dev-server.mjs",
+    "dev": "node dev-server.mjs"
+  }
+}

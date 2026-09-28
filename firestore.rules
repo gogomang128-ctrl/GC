@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && (request.auth.token.email == "gogomang128@gmail.com"
+        || (exists(/databases/$(database)/documents/admins/$(request.auth.token.email))
+          && get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.active == true));
+    }
+
+    function isOwner() {
+      return request.auth != null && request.auth.token.email == "gogomang128@gmail.com";
+    }
+
+    match /admins/{email} {
+      allow read: if request.auth != null && (isAdmin() || request.auth.token.email == email);
+      allow create, update, delete: if isOwner();
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == uid
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name", "whatsapp", "photoURL"])
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["walletBalance", "walletPoints"])
+            && request.resource.data.get("walletBalance", 0) >= 0
+            && request.resource.data.get("walletBalance", 0) <= resource.data.get("walletBalance", 0)
+            && request.resource.data.get("walletPoints", 0) >= resource.data.get("walletPoints", 0))));
+      allow delete: if false;
+    }
+
+    match /walletRequests/{requestId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == "pending"
+        && ((request.resource.data.type == "topup" && request.resource.data.amount is number && request.resource.data.amount >= 10)
+          || (request.resource.data.type == "convert" && request.resource.data.amount is number && request.resource.data.amount >= 1
+            && request.resource.data.points is number && request.resource.data.points >= 100)
+          || (request.resource.data.type == "withdraw" && request.resource.data.amount is number && request.resource.data.amount >= 10));
+      allow read: if request.auth != null && (request.auth.uid == resource.data.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /walletOrders/{orderId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    match /walletTransactions/{transactionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /items/{itemId} {
+      allow read: if true;
+      allow create: if isAdmin() && request.resource.data.sellerId == request.auth.uid;
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.sellerId && request.resource.data.sellerId == resource.data.sellerId);
+      allow delete: if isAdmin() || (request.auth != null && resource.data.sellerId == request.auth.uid);
+    }
+
+    match /chats/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+        allow create: if request.auth != null && (request.auth.uid == uid || isAdmin())
+          && request.resource.data.from in ["user", "admin"]
+          && (request.resource.data.from == "user"
+            ? request.auth.uid == uid
+            : (isAdmin() || (request.auth.uid == uid && request.resource.data.bot == true)));
+        allow update, delete: if false;
+      }
+    }
+  }
+}

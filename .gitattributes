@@ -1,0 +1,12 @@
+# Normalize line endings for web files
+* text=auto eol=lf
+
+# Binary media - never touch
+*.mp4 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
