@@ -75,5 +75,6 @@ const PAYMENTS = [
   {id: "binance", name: "Binance Pay", mark: "BNB", color: "#f0b90b", ink: "#111", fee: 0, image: "binance.png", country: "INTL"},
   {id: "stcpay", name: "STC Pay (ريال سعودي)", mark: "STC", color: "#5b2c6f", ink: "#fff", fee: 0, image: "stcpay.png", country: "SA"},
   {id: "baridimob", name: "BaridiMob (دينار جزائري)", mark: "BM", color: "#00874e", ink: "#fff", fee: 0, image: "baridimob.png", country: "DZ"},
-  {id: "whatsapp", name: "تواصل معنا للتأكيد", mark: "WA", color: "#25d366", ink: "#fff", fee: 0, note: "هنتواصل معاك على واتساب لتأكيد وسيلة الدفع بعد إرسال الطلب.", manual: true, country: "INTL"}
+  {id: "whatsapp", name: "تواصل معنا للتأكيد", mark: "WA", color: "#25d366", ink: "#fff", fee: 0, note: "هنتواصل معاك على واتساب لتأكيد وسيلة الدفع بعد إرسال الطلب.", manual: true, country: "INTL"},
+  {id: "wallet", name: "محفظة الموقع", mark: "W", color: "#0f766e", ink: "#fff", fee: 0, wallet: true, note: "ادفع على طول من رصيد محفظتك، من غير تحويل وبلا رسوم."}
 ];

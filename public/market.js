@@ -52,7 +52,7 @@ function renderDetail() {
   }
   const outOfStock = it.stock === 0;
   const qty = 1;
-  const pays = PAYMENTS.filter(m => !m.manual);
+  const pays = availablePayments().filter(m => !m.manual);
   const msg = encodeURIComponent(`مهتم بإعلان: ${it.title} — السعر ${it.price} ${CONFIG.currency}`);
   const waLink = `https://wa.me/${CONFIG.whatsapp}?text=${msg}`;
   const priceLine = it.oldPrice && it.oldPrice > it.price

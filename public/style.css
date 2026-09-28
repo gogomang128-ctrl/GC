@@ -1568,6 +1568,12 @@ a {
   color: var(--muted);
   font-size: 17px;
 }
+/* سطر رصيد المحفظة جوّه خيار الدفع بالمحفظة */
+.pbal {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+}
 .buybar {
   position: sticky;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -2145,6 +2151,10 @@ a {
 .corow.on {
   border-color: var(--brand);
   background: rgba(224, 33, 43, 0.08);
+}
+/* صف المحفظة للزائر غير المسجّل: بيبان إنه محتاج تسجيل دخول */
+.corow.needs-login {
+  border-style: dashed;
 }
 .coradio {
   grid-row: 1 / span 2;

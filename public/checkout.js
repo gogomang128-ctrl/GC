@@ -33,12 +33,34 @@ function coPayRow(m) {
     </button>`;
 }
 
+// وسيلة الدفع من المحفظة: بتظهر بس للزائر المسجّل، ولو مش مسجّل بتقوله يسجل.
+// بنستخدمها في مكانين: هنا في السلة، وفي صفحات الألعاب عن طريق availablePayments() في state.js.
 function coWalletRow() {
   const on = selPayCo === "wallet";
-  return `<button class="corow${on ? " on" : ""}" type="button" data-pay="wallet">
+  const note = currentUser
+    ? `الرصيد المتاح: ${fmtEGP(walletBalance())}`
+    : "سجّل دخولك الأول عشان تقدر تدفع من رصيد محفظتك";
+  return `<button class="corow${on ? " on" : ""}${currentUser ? "" : " needs-login"}" type="button" data-pay="wallet">
     <span class="coradio"></span><span class="coleft">💳<b>الدفع من المحفظة</b></span>
-    <small>الرصيد المتاح: ${walletBalance().toLocaleString("en-US")} ج.م</small>
+    <small>${note}</small>
   </button>`;
+}
+
+// Payments العادية بس من غير المحفظة، لأن المحفظة ليها صف خاص بيها فوق.
+function coPayRowsHtml() {
+  return PAYMENTS.filter(m => !m.wallet).map(coPayRow).join("");
+}
+
+function coPaysHtml() {
+  return coWalletRow() + coPayRowsHtml();
+}
+
+// بعد تسجيل الدخول بنحدّث قائمة الدفع بس (من غير ما نعيد رسم الفورم ونمسيح اللي كتبه الزائر).
+function onAuthChangedPage() {
+  const box = $("coPays");
+  if (box) box.innerHTML = coPaysHtml();
+  const totalEl = $("coTotal");
+  if (totalEl) totalEl.textContent = fmtEGP(selPayCo === "wallet" ? total() : withFee(total(), selPayCo));
 }
 
 function coEmpty() {
@@ -84,7 +106,7 @@ function renderCheckout() {
           </div>
           <div class="fstep">
             <h2>وسيلة الدفع</h2>
-            <div id="coPays">${coWalletRow()}${PAYMENTS.map(coPayRow).join("")}</div>
+            <div id="coPays">${coPaysHtml()}</div>
           </div>
           <button id="coSubmit" class="btn full lg">تأكيد الطلب!</button>
         </div>
@@ -106,6 +128,11 @@ function coDone(orderId, waText) {
 }
 
 async function submitCheckout(btn) {
+  if (selPayCo === "wallet" && !currentUser) {
+    toast("سجّل دخولك الأول عشان تقدر تدفع من محفظتك");
+    openAuth();
+    return;
+  }
   const name = $("coName").value.trim();
   const phoneRaw = $("coPhone").value.replace(/\s/g, "");
   const c = PHONE_COUNTRIES[selCountryCo] || PHONE_COUNTRIES.EG;
@@ -153,7 +180,7 @@ async function submitCheckout(btn) {
     renderCart();
     coDone(res.id, text);
   } catch (err) {
-    toast(err.message === "insufficient-funds" ? "رصيد المحفظة غير كافي" : "الطلب ماتسجلش، جرب تاني");
+    toast(selPayCo === "wallet" ? walletErrorMessage(err) : "الطلب ماتسجلش، جرب تاني");
     btn.disabled = false;
     btn.textContent = idle;
   }
@@ -169,6 +196,11 @@ function coDoneWallet(orderId) {
 document.addEventListener("click", e => {
   const p = e.target.closest(".corow[data-pay]");
   if (p) {
+    // المحفظة محتاجة حساب مسجّل، فبنحوّله لتسجيل الدخول بدل ما نختار وسيلة مستحيلة.
+    if (p.dataset.pay === "wallet" && !currentUser) {
+      openAuth();
+      return;
+    }
     selPayCo = p.dataset.pay;
     document.querySelectorAll(".corow").forEach(b => b.classList.toggle("on", b.dataset.pay === selPayCo));
     const totalEl = $("coTotal");

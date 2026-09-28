@@ -380,6 +380,13 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;",
 const labelOf = (g, p) => (p[0] + " " + g.cur).trim();
 const byId = id => GAMES.find(x => x.id === id);
 const payOf = id => PAYMENTS.find(m => m.id === id) || PAYMENTS[0];
+// ways to pay that the current visitor can actually use.
+// the wallet only shows for a signed-in visitor, and it comes first because it's the fastest.
+function availablePayments() {
+  const wallet = PAYMENTS.filter(m => m.wallet);
+  const others = PAYMENTS.filter(m => !m.wallet);
+  return currentUser ? wallet.concat(others) : others;
+}
 const withFee = (n, id) => Math.round(n * (1 + payOf(id).fee));
 const current = byId(document.body.dataset.game);
 

@@ -5,6 +5,7 @@ let selectedChatUid = null;
 let chatThreadMsgs = [];
 let chatThreadUnsub = null;
 let walletRequests = [];
+let walletOrders = [];
 let teamAdmins = [];
 
 function itemRow(it) {
@@ -35,6 +36,28 @@ function walletRequestRow(r) {
   return `<div class="item">
     <div><b>${title}: ${esc(r.name || "مستخدم")} — ${Number(r.amount || 0).toLocaleString("en-US")} ج.م</b><small>${esc(r.email || "")} — ${esc(walletMethodName(r.method))} — ${esc(r.note || "بدون ملاحظات")}</small></div>
     ${pending ? `<div style="display:flex;gap:8px"><button class="btn" data-wallet-approve="${r.id}">إضافة الرصيد</button><button class="ghost" data-wallet-reject="${r.id}">رفض</button></div>` : `<small>${r.status === "approved" ? "تمت الموافقة" : "مرفوض"}</small>`}
+  </div>`;
+}
+
+// طلب اتدفع من محفظة العميل على الموقع: الفلوس اتخصمت بالفعل، فمهمتنا هنا ننفّذ الشحن
+// أو نرجّع المبلغ لو الطلب اتلغى.
+function walletOrderRow(o) {
+  const pending = o.status === "pending";
+  const c = o.customer || {};
+  const items = (o.items || []).map(i => `${i.game} ${i.label} ×${i.qty}${i.uid ? " (ID: " + i.uid + ")" : ""}`).join(" — ");
+  const when = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleString("ar-EG") : "";
+  const state = o.status === "done" ? "✅ تم التنفيذ" : o.status === "refunded" ? "↩️ تم استرجاع المبلغ" : "⏳ بانتظار التنفيذ";
+  return `<div class="item">
+    <div>
+      <b>${esc(c.name || "عميل")} — ${fmtEGP(Number(o.total) || 0)}</b>
+      <small>${esc(c.phone || "")}${when ? " — " + esc(when) : ""}</small>
+      <small style="display:block;margin-top:4px">${esc(items)}</small>
+      <small style="display:block;margin-top:2px">${state}</small>
+    </div>
+    ${pending ? `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-wo-done="${o.id}">تم التنفيذ</button>
+      <button class="ghost" data-wo-refund="${o.id}">استرجاع المبلغ</button>
+    </div>` : ""}
   </div>`;
 }
 
@@ -70,6 +93,8 @@ function renderLists() {
   if (cl) cl.innerHTML = chats.length ? chats.map(chatRow).join("") : `<p class="empty">مفيش محادثات دلوقتي.</p>`;
   const wl = $("walletRequestsList");
   if (wl) wl.innerHTML = walletRequests.length ? walletRequests.map(walletRequestRow).join("") : `<p class="empty">مفيش طلبات محفظة.</p>`;
+  const ol = $("walletOrdersList");
+  if (ol) ol.innerHTML = walletOrders.length ? walletOrders.map(walletOrderRow).join("") : `<p class="empty">مفيش طلبات مدفوعة من المحفظة.</p>`;
   const al = $("teamAdminsList");
   if (al) al.innerHTML = teamAdmins.length ? teamAdmins.map(teamAdminRow).join("") : `<p class="empty">أضف أول عضو للفريق.</p>`;
 }
@@ -98,6 +123,8 @@ function renderAdmin() {
       <div id="chatsList"></div>
       <div class="sechead" style="margin-top:30px"><h2>طلبات المحفظة</h2></div>
       <div id="walletRequestsList"></div>
+      <div class="sechead" style="margin-top:30px"><h2>طلبات مدفوعة من المحفظة</h2><small class="sub">الفلوس دي اتخصمت من رصيد العميل بالفعل، فلازم تتنفّذ أو ترجع.</small></div>
+      <div id="walletOrdersList"></div>
       ${isOwner() ? `<div class="sechead" style="margin-top:30px"><h2>فريق الإدارة</h2></div>
       <div id="teamAdminsList"></div>
       <div class="mform" style="max-width:520px">
@@ -135,6 +162,11 @@ function listenAdmin() {
   db.collection("walletRequests").orderBy("createdAt", "desc")
     .onSnapshot(snap => {
       walletRequests = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      renderLists();
+    }, err => console.error(err));
+  db.collection("walletOrders").orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      walletOrders = snap.docs.map(d => ({id: d.id, ...d.data()}));
       renderLists();
     }, err => console.error(err));
   if (isOwner()) db.collection("admins").onSnapshot(snap => {
@@ -289,6 +321,40 @@ document.addEventListener("click", async e => {
       toast("تم رفض الطلب");
     } catch (err) { toast("تعذر تحديث الطلب"); }
   }
+  // طلبات المحفظة: بنعلّمها "تم التنفيذ" بعد شحن العميل.
+  const woDone = e.target.closest("[data-wo-done]");
+  if (woDone) {
+    const order = walletOrders.find(x => x.id === woDone.dataset.woDone);
+    if (!order || order.status !== "pending") return;
+    woDone.disabled = true;
+    try {
+      await db.collection("walletOrders").doc(order.id).update({
+        status: "done",
+        doneAt: firebase.firestore.FieldValue.serverTimestamp(),
+        doneBy: currentUser.email
+      });
+      toast("تم تنفيذ الطلب ✓");
+    } catch (err) { toast("تعذر تحديث الطلب"); woDone.disabled = false; }
+  }
+
+  // استرجاع المبلغ: بيرجّع الرصيد للعميل ويسجّل العملية في سجل المحفظة.
+  const woRefund = e.target.closest("[data-wo-refund]");
+  if (woRefund) {
+    const order = walletOrders.find(x => x.id === woRefund.dataset.woRefund);
+    if (!order || order.status !== "pending") return;
+    if (!confirm("هترجع المبلغ للعميل في محفظته. متأكد؟")) return;
+    woRefund.disabled = true;
+    try {
+      await adjustWallet(order.uid, Number(order.total) || 0, "استرجاع طلب محفظة " + order.id);
+      await db.collection("walletOrders").doc(order.id).update({
+        status: "refunded",
+        refundedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        refundedBy: currentUser.email
+      });
+      toast("تم إرجاع المبلغ للمحفظة ✓");
+    } catch (err) { toast("تعذر إرجاع المبلغ"); woRefund.disabled = false; }
+  }
+
   if (e.target.id === "walletAdminApply") {
     const uid = $("walletAdminUid").value.trim();
     const amount = Math.floor(Number($("walletAdminAmount").value));

@@ -49,7 +49,7 @@ function buildShell() {
       <div id="done" class="db" hidden>
         <h3>تم تسجيل طلبك ✅</h3>
         <p id="oid"></p>
-        <p>ابعت الطلب على واتساب وهنكمل الدفع والشحن معاك.</p>
+        <p id="odone">ابعت الطلب على واتساب وهنكمل الدفع والشحن معاك.</p>
         <a id="wa" class="btn full" target="_blank" rel="noopener">ابعت الطلب على واتساب</a>
         <button id="again" class="ghost">رجوع للمتجر</button>
       </div>

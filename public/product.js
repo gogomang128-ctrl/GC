@@ -66,7 +66,32 @@ function packCard(g, p, i) {
     </button>`;
 }
 
+function payOptionHtml(m) {
+  const extra = m.wallet ? `<small class="pbal">رصيدك: ${fmtEGP(walletBalance())}</small>` : "";
+  return `
+    <button class="payopt${m.id === selPay ? " on" : ""}" data-p="${m.id}">
+      <span style="display:block;margin-bottom:8px">${payBadge(m, 32)}</span>
+      <span class="pmeth">${esc(m.name)}</span>
+      ${extra}
+      <b class="pprice">—</b>
+    </button>`;
+}
+
+function payGridHtml() {
+  return availablePayments().map(payOptionHtml).join("");
+}
+
+// بعد تسجيل الدخول أو الخروج بنعيد رسم خيارات الدفع، عشان خيار المحفظة يظهر أو يختفي.
+function onAuthChangedPage() {
+  const grid = document.querySelector(".paygrid");
+  if (!grid || !current) return;
+  grid.innerHTML = payGridHtml();
+  refreshBuy();
+}
+
 function refreshBuy() {
+  const list = availablePayments();
+  if (!list.some(m => m.id === selPay)) selPay = list[0].id;
   const p = selPack < 0 ? null : current.packs[selPack];
   const m = payOf(selPay);
   document.querySelectorAll(".pack").forEach(b => b.classList.toggle("on", +b.dataset.i === selPack));
@@ -103,8 +128,14 @@ function readBuy(full) {
 
 async function placeOrder(name, phone, items, payId, btn, fromCart) {
   const idle = btn.textContent;
+  const isWallet = payId === "wallet";
+  if (isWallet && !currentUser) {
+    toast("سجّل دخولك الأول عشان تقدر تدفع من محفظتك");
+    openAuth();
+    return;
+  }
   btn.disabled = true;
-  btn.textContent = "جاري تسجيل الطلب...";
+  btn.textContent = isWallet ? "جاري الخصم من محفظتك..." : "جاري تسجيل الطلب...";
   const sum = items.reduce((s, i) => s + i.price * i.qty, 0);
   const order = {
     customer: {name, phone},
@@ -113,12 +144,23 @@ async function placeOrder(name, phone, items, payId, btn, fromCart) {
     total: withFee(sum, payId)
   };
   try {
-    const res = await api.createOrder(order);
+    // الدفع بالمحفظة بيكتب الطلب جوه transactions بتاع Firestore ويخصم الرصيد في نفس
+    // العملية، فمفيش طلب يتسجل من غير ما الرصيد يتحرك. باقي الوسائل بترسل الطلب واتساب.
+    const orderId = isWallet ? await spendWallet(order.total, order) : (await api.createOrder(order)).id;
     const orders = store.get("orders", []);
-    orders.push({...order, id: res.id});
+    orders.push({...order, id: orderId});
     store.set("orders", orders);
     const lines = order.items.map(i => `- ${i.game} ${i.label} x${i.qty} (ID: ${i.uid})`).join("\n");
-    const text = `طلب جديد ${res.id}
+    const text = isWallet
+      ? `طلب جديد ${orderId}
+الاسم: ${name}
+واتساب: ${phone}
+${lines}
+الإجمالي: ${fmt(order.total)}
+الدفع: ${order.payment}
+
+العميل دفع من محفظته على الموقع، برجاء بدء التنفيذ مباشرة.`
+      : `طلب جديد ${orderId}
 الاسم: ${name}
 واتساب: ${phone}
 ${lines}
@@ -127,11 +169,15 @@ ${lines}
 
 برجاء تحويل مبلغ ${fmt(order.total)} على وسيلة الدفع المختارة، وإرسال صورة وصل التحويل هنا عشان نأكد الطلب ونبدأ التنفيذ.`;
     const waLink = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(text);
-    $("oid").textContent = "رقم الطلب: " + res.id;
+    $("oid").textContent = "رقم الطلب: " + orderId;
+    $("odone").textContent = isWallet
+      ? "تم خصم المبلغ من محفظتك والطلب اتسجل عندنا. هنبدأ التنفيذ فورًا."
+      : "ابعت الطلب على واتساب وهنكمل الدفع والشحن معاك.";
     $("wa").href = waLink;
+    $("wa").textContent = isWallet ? "ابعت تفاصيل الطلب على واتساب" : "ابعت الطلب على واتساب";
     $("cartBody").hidden = true;
     $("done").hidden = false;
-    window.open(waLink, "_blank");
+    if (!isWallet) window.open(waLink, "_blank");
     if (fromCart) {
       cart = [];
       save();
@@ -140,7 +186,7 @@ ${lines}
       openCart();
     }
   } catch (err) {
-    toast("الطلب ماتسجلش، جرب تاني");
+    toast(isWallet ? walletErrorMessage(err) : "الطلب ماتسجلش، جرب تاني");
   }
   btn.disabled = false;
   btn.textContent = idle;
@@ -188,13 +234,7 @@ function renderGame(g) {
         </section>
         <section class="fstep">
           <h2><span class="fnum">2</span>اختر طريقة الدفع</h2>
-          <div class="paygrid">${PAYMENTS.map(m => `
-            <button class="payopt${m.id === selPay ? " on" : ""}" data-p="${m.id}">
-              <span style="display:block;margin-bottom:8px">${payBadge(m, 32)}</span>
-              <span class="pmeth">${m.name}</span>
-              <b class="pprice">—</b>
-            </button>`).join("")}
-          </div>
+          <div class="paygrid">${payGridHtml()}</div>
         </section>
         <section class="fstep">
           <h2><span class="fnum">3</span>أدخل بياناتك</h2>
