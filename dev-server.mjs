@@ -9,7 +9,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
 
-const root = path.dirname(fileURLToPath(import.meta.url));
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+// ملفات الموقع كلها داخل public/ بما يطابق إعداد Firebase Hosting
+const root = path.join(scriptDir, "public");
 const port = Number(process.env.PORT) || Number(process.argv[2]) || 8080;
 
 const types = {
@@ -63,6 +65,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log("GCCC game store - local server");
+  console.log(`  root:     ${root}`);
   console.log(`  local:   http://localhost:${port}/`);
   console.log(`  local:   http://127.0.0.1:${port}/`);
   for (const ip of Object.values(os.networkInterfaces()).flat()) {

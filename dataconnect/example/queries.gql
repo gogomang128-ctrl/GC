@@ -1,0 +1,144 @@
+query GetStoreAccount($id: UUID!) @auth(level: USER) {
+  storeAccount(id: $id) {
+    email
+    storeName
+    phoneNumber
+    location
+  }
+}
+
+query ListStoreAccounts @auth(level: USER) {
+  storeAccounts {
+    id
+    email
+    storeName
+  }
+}
+
+mutation CreateStoreAccount($data: StoreAccount_Data!) @auth(level: USER) {
+  storeAccount_insert(data: $data)
+}
+
+mutation UpdateStoreAccount($id: UUID!, $data: StoreAccount_Data!) @auth(level: USER) {
+  storeAccount_update(id: $id, data: $data)
+}
+
+mutation DeleteStoreAccount($id: UUID!) @auth(level: USER) {
+  storeAccount_delete(id: $id)
+}
+
+query GetGenre($id: UUID!) @auth(level: PUBLIC, insecureReason: "Genre data is non-sensitive and publicly shared.") {
+  genre(id: $id) {
+    name
+    description
+  }
+}
+
+query ListGenres @auth(level: PUBLIC, insecureReason: "Genre list is non-sensitive.") {
+  genres {
+    id
+    name
+  }
+}
+
+mutation CreateGenre($data: Genre_Data!) @auth(level: USER) {
+  genre_insert(data: $data)
+}
+
+mutation UpdateGenre($id: UUID!, $data: Genre_Data!) @auth(level: USER) {
+  genre_update(id: $id, data: $data)
+}
+
+mutation DeleteGenre($id: UUID!) @auth(level: USER) {
+  genre_delete(id: $id)
+}
+
+query GetPlatform($id: UUID!) @auth(level: PUBLIC, insecureReason: "Platform data is public information.") {
+  platform(id: $id) {
+    name
+    manufacturer
+  }
+}
+
+query ListPlatforms @auth(level: PUBLIC, insecureReason: "Platform list is public information.") {
+  platforms {
+    id
+    name
+  }
+}
+
+mutation CreatePlatform($data: Platform_Data!) @auth(level: USER) {
+  platform_insert(data: $data)
+}
+
+mutation UpdatePlatform($id: UUID!, $data: Platform_Data!) @auth(level: USER) {
+  platform_update(id: $id, data: $data)
+}
+
+mutation DeletePlatform($id: UUID!) @auth(level: USER) {
+  platform_delete(id: $id)
+}
+
+query GetGame($id: UUID!) @auth(level: PUBLIC, insecureReason: "Game catalog is public.") {
+  game(id: $id) {
+    title
+    price
+    stockQuantity
+    condition
+  }
+}
+
+query ListGames @auth(level: PUBLIC, insecureReason: "Game catalog is public.") {
+  games {
+    id
+    title
+    price
+  }
+}
+
+mutation CreateGame($data: Game_Data!) @auth(level: USER) {
+  game_insert(data: $data)
+}
+
+mutation UpdateGame($id: UUID!, $data: Game_Data!) @auth(level: USER) {
+  game_update(id: $id, data: $data)
+}
+
+mutation DeleteGame($id: UUID!) @auth(level: USER) {
+  game_delete(id: $id)
+}
+
+query GetTransaction($id: UUID!) @auth(level: USER) {
+  transaction(id: $id) {
+    timestamp
+    quantityChanged
+    notes
+    game {
+      title
+    }
+  }
+}
+
+query ListTransactions @auth(level: USER) {
+  transactions {
+    id
+    timestamp
+    quantityChanged
+  }
+}
+
+mutation CreateTransaction($data: Transaction_Data!) @auth(level: USER) {
+  transaction_insert(data: $data)
+}
+
+mutation UpsertTransaction($data: Transaction_Data!) @auth(level: USER) {
+  transaction_upsert(data: $data)
+}
+
+mutation UpdateTransaction($id: UUID!, $data: Transaction_Data!) @auth(level: USER) {
+  transaction_update(id: $id, data: $data)
+}
+
+mutation DeleteTransaction($id: UUID!) @auth(level: USER) {
+  transaction_delete(id: $id)
+}

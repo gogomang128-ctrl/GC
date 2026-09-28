@@ -1,0 +1,25 @@
+mutation SeedDemoData @transaction @auth(level: USER) {
+  genre_insertMany(data: [
+    { name: "Action", description: "High-energy gameplay." },
+    { name: "RPG", description: "Immersive narrative driven." },
+    { name: "Strategy", description: "Turn-based or real-time planning." }
+  ])
+  platform_insertMany(data: [
+    { name: "PC", manufacturer: "Various" },
+    { name: "PlayStation 5", manufacturer: "Sony" },
+    { name: "Xbox Series X", manufacturer: "Microsoft" }
+  ])
+  game_insertMany(data: [
+    { title: "Elden Ring", price: 59.99, stockQuantity: 50, condition: "New", genre: { id: "00000000-0000-0000-0000-000000000001" }, platform: { id: "00000000-0000-0000-0000-000000000001" } },
+    { title: "Starfield", price: 69.99, stockQuantity: 30, condition: "New", genre: { id: "00000000-0000-0000-0000-000000000002" }, platform: { id: "00000000-0000-0000-0000-000000000003" } },
+    { title: "Civilization VI", price: 29.99, stockQuantity: 100, condition: "Used", genre: { id: "00000000-0000-0000-0000-000000000003" }, platform: { id: "00000000-0000-0000-0000-000000000001" } }
+  ])
+  storeAccount_insertMany(data: [
+    { email: "admin@gamevault.com", storeName: "GameVault", location: "New York" },
+    { email: "sales@pixelstore.com", storeName: "PixelStore", location: "San Francisco" }
+  ])
+  transaction_insertMany(data: [
+    { timestamp: "2023-10-27T10:00:00Z", quantityChanged: -1, notes: "Sold Elden Ring", game: { id: "00000000-0000-0000-0000-000000000001" } },
+    { timestamp: "2023-10-27T11:30:00Z", quantityChanged: 5, notes: "Restock Civ VI", game: { id: "00000000-0000-0000-0000-000000000003" } }
+  ])
+}

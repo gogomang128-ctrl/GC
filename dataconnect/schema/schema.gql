@@ -1,0 +1,35 @@
+type StoreAccount @table {
+  email: String!
+  storeName: String!
+  phoneNumber: String
+  location: String
+}
+
+type Genre @table {
+  name: String!
+  description: String
+}
+
+type Platform @table {
+  name: String!
+  manufacturer: String
+}
+
+type Game @table {
+  title: String!
+  price: Float!
+  stockQuantity: Int!
+  condition: String!
+  description: String
+  releaseDate: Date
+  imageUrl: String
+  genre: Genre
+  platform: Platform
+}
+
+type Transaction @table {
+  timestamp: Timestamp!
+  quantityChanged: Int!
+  notes: String
+  game: Game!
+}
