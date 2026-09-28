@@ -1,6 +1,6 @@
 
 
-const CACHE_NAME = "gamestore-cache-v3";
+const CACHE_NAME = "gamestore-cache-v4";
 
 const PRECACHE = [
   "/index.html",
@@ -17,7 +17,14 @@ const PRECACHE = [
   "/main.js",
   "/manifest.json",
   "/icon-192.png",
-  "/icon-512.png"
+  "/icon-512.png",
+  "/icon-512-maskable.png",
+  "/apple-touch-icon.png",
+  "/favicon.ico",
+  "/logo.jpg",
+  "/og-image.jpg",
+  "/intro.css",
+  "/intro.js"
 ];
 
 self.addEventListener("install", event => {
