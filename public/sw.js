@@ -1,6 +1,6 @@
 
 
-const CACHE_NAME = "gamestore-cache-v4";
+const CACHE_NAME = "gamestore-cache-v5";
 
 const PRECACHE = [
   "/index.html",
@@ -21,7 +21,7 @@ const PRECACHE = [
   "/icon-512-maskable.png",
   "/apple-touch-icon.png",
   "/favicon.ico",
-  "/logo.jpg",
+  "/logo.png",
   "/og-image.jpg",
   "/intro.css",
   "/intro.js"

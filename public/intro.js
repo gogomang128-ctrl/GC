@@ -43,7 +43,7 @@
   el.setAttribute("aria-label", "Welcome to GC");
   el.innerHTML =
     '<div class="gc-intro-box">' +
-    '  <div class="gc-intro-logo"><img src="logo.jpg" alt="GC" width="900" height="491" fetchpriority="high" decoding="async"></div>' +
+    '  <div class="gc-intro-logo"><img src="logo.png" alt="GC" width="788" height="483" fetchpriority="high" decoding="async"></div>' +
     '  <div class="gc-intro-text">' +
     '    <h1 class="gc-intro-en"><span class="gc-w" style="animation-delay:.62s">Welcome</span> <span class="gc-w" style="animation-delay:.74s">to</span> <span class="gc-w" style="animation-delay:.86s">GC</span></h1>' +
     '    <p class="gc-intro-ar">أهلاً بيك في <b>GC</b> — شحن ألعاب فوري</p>' +
